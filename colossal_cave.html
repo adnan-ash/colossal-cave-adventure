@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colossal Cave Adventure - Graphical Remake</title>
+  <style>
+    /* ==========================================================================
+       Colossal Cave Adventure - Self-Contained Modern-Retro Terminal Styles
+       ========================================================================== */
+    :root {
+      --bg-dark: #070a13;
+      --bg-surface: #0f172a;
+      --bg-card: #141e33;
+      --border-color: #1e293b;
+      --border-accent: #334155;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --neon-green: #10b981;
+      --neon-cyan: #38bdf8;
+      --amber-accent: #f59e0b;
+      --danger-red: #ef4444;
+      --gold-yellow: #facc15;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .scanlines::after {
+      content: " ";
+      display: block;
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 40;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    header {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      z-index: 30;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--neon-green);
+      letter-spacing: 0.05em;
+    }
+
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    .stat-chip {
+      background: #1e293b;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+    .stat-chip span:first-child { color: var(--text-muted); margin-right: 0.25rem; font-size: 0.65rem; }
+    .stat-chip span:last-child { font-weight: bold; }
+
+    .header-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-top {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.7rem;
+      transition: all 0.15s;
+    }
+    .btn-top:hover {
+      background: #1e293b;
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+    }
+
+    .game-container {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      max-width: 1750px;
+      margin: 0 auto;
+      width: 100%;
+      overflow-y: auto;
+    }
+
+    /* Custom Tactile Glowing Retro Slide Bar / Scrollbar */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--neon-cyan) #030712;
+    }
+    ::-webkit-scrollbar {
+      width: 9px;
+      height: 9px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030712;
+      border-left: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #0284c7;
+      border-radius: 4px;
+      border: 1.5px solid var(--neon-cyan);
+      box-shadow: inset 0 0 6px rgba(56, 189, 248, 0.4);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--neon-cyan);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.75);
+    }
+
+    /* Mobile Quick Slide Navigator */
+    .mobile-quick-nav {
+      display: none;
+      position: sticky;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border-color);
+      padding: 0.35rem 0.5rem;
+      justify-content: space-around;
+      gap: 0.25rem;
+      z-index: 40;
+    }
+    .mobile-quick-nav button {
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      color: #cbd5e1;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mobile-quick-nav button:hover, .mobile-quick-nav button:active {
+      background: var(--bg-card);
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+    }
+    @media (max-width: 1023px) {
+      .mobile-quick-nav { display: flex; }
+    }
+
+    @media (max-width: 640px) {
+      header {
+        padding: 0.35rem 0.5rem;
+        gap: 0.35rem;
+        flex-wrap: nowrap;
+      }
+      .logo-area span:first-child {
+        font-size: 0.85rem;
+      }
+      .logo-area span:last-child {
+        display: none;
+      }
+      .stats-bar {
+        gap: 0.25rem;
+      }
+      .stat-chip {
+        padding: 0.15rem 0.35rem;
+        font-size: 0.65rem;
+      }
+      .header-btns {
+        gap: 0.25rem;
+      }
+      .btn-top {
+        padding: 0.2rem 0.35rem;
+        font-size: 0.65rem;
+      }
+      .game-container {
+        padding: 0.4rem;
+        gap: 0.5rem;
+      }
+      .viewport-container {
+        max-height: 35vh;
+      }
+      .mobile-quick-nav button {
+        flex: 1;
+        text-align: center;
+        padding: 0.35rem 0.25rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .game-container {
+        display: grid;
+        grid-template-columns: 5fr 7fr;
+        overflow-y: auto;
+      }
+    }
+
+    .left-panel, .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      min-height: 0;
+    }
+
+    @media (min-width: 1024px) {
+      .left-panel { overflow-y: auto; }
+      .right-panel { overflow-y: auto; height: 100%; }
+    }
+
+    .viewport-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      max-height: 40vh;
+      background: #020617;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+
+    .viewport-svg-wrap {
+      width: 100%;
+      height: 100%;
+    }
+    .viewport-svg-wrap svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .ascii-wrap {
+      width: 100%;
+      height: 100%;
+      padding: 1rem;
+      color: var(--neon-green);
+      font-size: 0.75rem;
+      line-height: 1.2;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    /* Room Cross-Fade Transition Animations */
+    @keyframes roomCrossFade {
+      0% {
+        opacity: 0;
+        transform: scale(1.025);
+        filter: blur(4px) brightness(0.7);
+      }
+      40% {
+        opacity: 0.65;
+        filter: blur(1.5px) brightness(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0px) brightness(1);
+      }
+    }
+
+    @keyframes headerSlideFade {
+      0% {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .room-fade-in {
+      animation: roomCrossFade 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: opacity, transform, filter;
+    }
+
+    .header-fade-in {
+      animation: headerSlideFade 380ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: opacity, transform;
+    }
+
+    .location-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .loc-title {
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: var(--neon-cyan);
+    }
+    .loc-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .widget-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      flex-shrink: 0;
+    }
+    .widget-header {
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 0.25rem;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    .compass-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.35rem;
+    }
+    .compass-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.45rem 0.2rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .compass-btn:hover:not(:disabled) {
+      background: #1e293b;
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+    }
+    .compass-btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+      border-color: transparent;
+    }
+    .compass-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .inventory-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .inv-empty {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 1rem 0;
+      font-style: italic;
+    }
+    .inv-item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 0.35rem 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .inv-item-card:hover {
+      border-color: var(--amber-accent);
+    }
+    .inv-item-name { color: var(--amber-accent); font-weight: bold; }
+    .inv-item-status { font-size: 0.65rem; color: var(--text-muted); }
+
+    .action-buttons-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .action-btn {
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      color: var(--text-main);
+      padding: 0.4rem 0.65rem;
+      border-radius: 5px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s;
+    }
+    .action-btn:hover {
+      background: #334155;
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+    }
+    .action-btn.btn-urgent {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: var(--amber-accent);
+      color: #fde68a;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .terminal-box {
+      flex: 1;
+      min-height: 0;
+      background: #020617;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .terminal-header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.4rem 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .terminal-log-output {
+      flex: 1;
+      min-height: 0;
+      padding: 0.75rem;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .log-line { animation: fadeIn 0.15s ease-in-out; }
+    .log-turn { color: #64748b; margin-right: 0.35rem; font-size: 0.7rem; }
+    .log-narration { color: #e2e8f0; }
+    .log-action { color: var(--amber-accent); font-weight: bold; }
+    .log-warning { color: var(--danger-red); font-weight: bold; }
+    .log-success { color: var(--neon-green); font-weight: bold; }
+    .log-lore { color: #c084fc; font-style: italic; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(2px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .terminal-input-bar {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      padding: 0.4rem 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    .terminal-prompt { color: var(--neon-green); font-weight: bold; font-size: 0.85rem; }
+    .terminal-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.8rem;
+    }
+    .terminal-btn {
+      background: var(--neon-green);
+      color: #020617;
+      border: none;
+      border-radius: 4px;
+      padding: 0.25rem 0.6rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 1rem;
+    }
+    .modal-box {
+      background: #0f172a;
+      border: 2px solid var(--neon-cyan);
+      border-radius: 12px;
+      max-width: 520px;
+      width: 100%;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(56, 189, 248, 0.25);
+    }
+    .modal-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 0.75rem; }
+    .modal-desc { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 1.25rem; line-height: 1.6; }
+    .modal-btn {
+      background: var(--neon-green);
+      color: #020617;
+      border: none;
+      border-radius: 6px;
+      padding: 0.6rem 1.5rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="scanlines">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-area">
+      <span>ADVENTURE</span>
+      <span style="font-size: 0.65rem; color: #64748b; font-weight: normal;">COLOSSAL CAVE (1976/77)</span>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-chip"><span>TURNS:</span><span id="stat-turns" style="color: var(--neon-cyan)">0</span></div>
+      <div class="stat-chip"><span>SCORE:</span><span id="stat-score" style="color: var(--amber-accent)">0 / 160</span></div>
+      <button class="btn-top" id="btn-reset-session" style="padding: 0.2rem 0.5rem; font-size: 0.65rem;" title="Reset session checkpoint">RESET</button>
+    </div>
+    <div class="header-btns">
+      <button class="btn-top" id="btn-toggle-scanlines">CRT: ON</button>
+      <button class="btn-top" id="btn-toggle-view">VIEW: SVG</button>
+      <button class="btn-top" id="btn-toggle-sound" title="Toggle persistent ambient noise & synthesizer">AMBIENT: ON</button>
+      <button class="btn-top" id="btn-reset-game">RESTART</button>
+    </div>
+  </header>
+
+  <!-- Split Panel Container -->
+  <div class="game-container">
+    <!-- Left Panel: Viewport & Map -->
+    <div class="left-panel">
+      <div class="viewport-container" id="viewport-box">
+        <div class="viewport-svg-wrap" id="svg-layer"></div>
+        <div class="ascii-wrap" id="ascii-layer" style="display: none;"></div>
+      </div>
+
+      <div class="location-card">
+        <div>
+          <div class="loc-title" id="loc-title">End of the Road</div>
+          <div class="loc-sub" id="loc-sub">Surface Woods · Outside Brick Building</div>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--neon-green); font-weight: bold;" id="loc-code">ROAD END</div>
+      </div>
+
+      <!-- Tactical Subterranean Topology Map -->
+      <div class="widget-box">
+        <div class="widget-header" style="color: var(--neon-cyan);">
+          <span>MASTER CAVE TOPOLOGY</span>
+          <span id="map-survey-count">SURVEYED: 1 / 13</span>
+        </div>
+        <div id="cave-map-container" style="height: 140px; background: #020617; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; position: relative;">
+          <svg id="cave-map-svg" viewBox="0 0 440 240" style="width: 100%; height: 100%; display: block;"></svg>
+        </div>
+        <div id="map-node-recon" style="display: none; font-size: 0.7rem; background: #020617; border: 1px solid var(--neon-cyan); border-radius: 6px; padding: 0.4rem 0.6rem; margin-top: 0.25rem;"></div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Controls & Terminal -->
+    <div class="right-panel">
+      <div class="controls-grid">
+        <!-- Compass Widget -->
+        <div class="widget-box">
+          <div class="widget-header">
+            <span>COMPASS CONTROLS</span>
+            <span id="exits-count">EXITS</span>
+          </div>
+          <div class="compass-grid">
+            <button class="compass-btn" id="btn-dir-up" data-dir="UP">UP ↗</button>
+            <button class="compass-btn" id="btn-dir-n" data-dir="N">N ▲</button>
+            <button class="compass-btn" id="btn-dir-down" data-dir="DOWN">DN ↘</button>
+            <button class="compass-btn" id="btn-dir-w" data-dir="W">◀ W</button>
+            <div class="compass-center">
+              <span style="color: var(--neon-green)">●</span>
+              <span>NAV</span>
+            </div>
+            <button class="compass-btn" id="btn-dir-e" data-dir="E">E ▶</button>
+            <div></div>
+            <button class="compass-btn" id="btn-dir-s" data-dir="S">S ▼</button>
+            <div></div>
+          </div>
+        </div>
+
+        <!-- Inventory Locker -->
+        <div class="widget-box">
+          <div class="widget-header">
+            <span>INVENTORY LOCKER</span>
+            <span id="inv-count">0 ITEMS</span>
+          </div>
+          <div class="inventory-list" id="inv-container">
+            <div class="inv-empty">Locker is empty.<br>Pick up supplies.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contextual Action Buttons -->
+      <div class="widget-box">
+        <div class="widget-header">
+          <span>CONTEXTUAL ACTIONS</span>
+          <span style="font-size: 0.65rem; color: var(--text-muted);">ZERO-GRAMMAR INTERACTION</span>
+        </div>
+        <div class="action-buttons-wrap" id="action-btns-container"></div>
+      </div>
+
+      <!-- Scrolling Narrative Terminal Log -->
+      <div class="terminal-box" id="terminal-box">
+        <div class="terminal-header">
+          <span>NARRATIVE TERMINAL</span>
+          <span>CROWTHER & WOODS [1976/77]</span>
+        </div>
+        <div class="terminal-log-output" id="terminal-output"></div>
+        <form class="terminal-input-bar" id="terminal-form">
+          <span class="terminal-prompt">&gt;</span>
+          <input type="text" class="terminal-input" id="terminal-input" placeholder="Type command (e.g. 'LOOK', 'LIGHT LANTERN', 'XYZZY') or click buttons..." autocomplete="off">
+          <button type="submit" class="terminal-btn">SEND</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Floating Quick-Slide Navigation Bar -->
+  <nav class="mobile-quick-nav" aria-label="Mobile quick-slide navigation">
+    <button onclick="document.getElementById('viewport-box').scrollIntoView({behavior:'smooth'})">👁️ VIEW</button>
+    <button onclick="document.querySelector('.compass-grid').scrollIntoView({behavior:'smooth'})">🧭 NAV</button>
+    <button onclick="document.getElementById('cave-map-container').scrollIntoView({behavior:'smooth'})">🗺️ MAP</button>
+    <button onclick="document.getElementById('terminal-box').scrollIntoView({behavior:'smooth'})">💻 TERMINAL</button>
+    <button onclick="document.querySelector('.game-container').scrollTo({top:0,behavior:'smooth'})">▲ TOP</button>
+  </nav>
+
+  <!-- Modal Screen for Game Over & Victory -->
+  <div class="modal-overlay" id="game-modal" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-title" id="modal-title">GAME OVER</div>
+      <div class="modal-desc" id="modal-desc">Description text.</div>
+      <button class="modal-btn" id="modal-action-btn">TRY AGAIN</button>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       Sound Synthesizer (Web Audio API)
+       ========================================================================== */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        let stored = true;
+        try {
+          const val = localStorage.getItem("colossal_sound_enabled");
+          if (val !== null) stored = (val === "true");
+        } catch(e) {}
+        this.enabled = stored;
+        this.ambientGain = null;
+        this.ambientRunning = false;
+
+        // Auto-resume audio on first user gesture if enabled
+        const unlock = () => {
+          this.init();
+          if (this.enabled && !this.ambientRunning) this.startAmbient();
+          window.removeEventListener("click", unlock);
+          window.removeEventListener("keydown", unlock);
+        };
+        window.addEventListener("click", unlock, { passive: true });
+        window.addEventListener("keydown", unlock, { passive: true });
+      }
+
+      init() {
+        if (!this.ctx && (window.AudioContext || window.webkitAudioContext)) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      createNoiseBuffer(sec = 8) {
+        if (!this.ctx) return null;
+        const size = this.ctx.sampleRate * sec;
+        const b = this.ctx.createBuffer(1, size, this.ctx.sampleRate);
+        const data = b.getChannelData(0);
+        let last = 0;
+        for (let i = 0; i < size; i++) {
+          last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+          data[i] = last * 3.5;
+        }
+        return b;
+      }
+
+      startAmbient() {
+        if (!this.enabled || this.ambientRunning) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          this.ambientGain = this.ctx.createGain();
+          const t = this.ctx.currentTime;
+          this.ambientGain.gain.setValueAtTime(0.0001, t);
+          this.ambientGain.gain.exponentialRampToValueAtTime(0.035, t + 1.2);
+          this.ambientGain.connect(this.ctx.destination);
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = "lowpass";
+          filter.frequency.setValueAtTime(180, t);
+          filter.connect(this.ambientGain);
+
+          const lfo = this.ctx.createOscillator();
+          const lfoGain = this.ctx.createGain();
+          lfo.frequency.setValueAtTime(0.12, t);
+          lfoGain.gain.setValueAtTime(70, t);
+          lfo.connect(lfoGain);
+          lfoGain.connect(filter.frequency);
+          lfo.start();
+
+          const buf = this.createNoiseBuffer(8);
+          if (buf) {
+            this.noiseSrc = this.ctx.createBufferSource();
+            this.noiseSrc.buffer = buf;
+            this.noiseSrc.loop = true;
+            this.noiseSrc.connect(filter);
+            this.noiseSrc.start();
+          }
+
+          // Rumble sub-oscillator
+          this.rumble = this.ctx.createOscillator();
+          const rGain = this.ctx.createGain();
+          this.rumble.frequency.setValueAtTime(50, t);
+          rGain.gain.setValueAtTime(0.018, t);
+          this.rumble.connect(rGain);
+          rGain.connect(this.ambientGain);
+          this.rumble.start();
+
+          this.ambientRunning = true;
+        } catch(e) {}
+      }
+
+      stopAmbient() {
+        if (!this.ambientRunning || !this.ambientGain || !this.ctx) {
+          this.ambientRunning = false;
+          return;
+        }
+        try {
+          const t = this.ctx.currentTime;
+          this.ambientGain.gain.setValueAtTime(this.ambientGain.gain.value, t);
+          this.ambientGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+          setTimeout(() => {
+            try {
+              if (this.noiseSrc) { this.noiseSrc.stop(); this.noiseSrc.disconnect(); }
+              if (this.rumble) { this.rumble.stop(); this.rumble.disconnect(); }
+              if (this.ambientGain) { this.ambientGain.disconnect(); }
+            } catch(e) {}
+            this.ambientRunning = false;
+          }, 450);
+        } catch(e) {
+          this.ambientRunning = false;
+        }
+      }
+
+      setEnabled(val) {
+        this.enabled = val;
+        try {
+          localStorage.setItem("colossal_sound_enabled", String(val));
+        } catch(e) {}
+        if (val) this.startAmbient();
+        else this.stopAmbient();
+      }
+      playStep() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      }
+      playUnlock() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        [1200, 1600, 2200].forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const t = this.ctx.currentTime + i * 0.05;
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.05, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.1);
+        });
+      }
+      playLight() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(260, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.08, this.ctx.currentTime + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.25);
+      }
+      playBird() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        [1760, 2093, 2637, 3136].forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const t = this.ctx.currentTime + idx * 0.07;
+          osc.frequency.setValueAtTime(f, t);
+          gain.gain.setValueAtTime(0.04, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.065);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.07);
+        });
+      }
+      playSnake() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const bufferSize = this.ctx.sampleRate * 0.35;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(4500, this.ctx.currentTime);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
+      }
+      playMagic() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        [587, 880, 1174, 1760].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const t = this.ctx.currentTime + i * 0.05;
+          osc.frequency.setValueAtTime(f, t);
+          gain.gain.setValueAtTime(0.05, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.3);
+        });
+      }
+      playDeath() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        [110, 116, 130].forEach(f => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(f * 0.5, this.ctx.currentTime + 1.2);
+          gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.2);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 1.2);
+        });
+      }
+      playVictory() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const t = this.ctx.currentTime + idx * 0.12;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, t);
+          gain.gain.setValueAtTime(0.08, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.3);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /* ==========================================================================
+       Master Map Database (13 Rooms)
+       ========================================================================== */
+    const ROOM_DEFS = {
+      ROAD_END: {
+        title: "End of the Road",
+        sub: "Surface Woods · Outside Brick Building",
+        code: "ROAD END",
+        desc: "You are standing at the end of a road before a small brick building. Around you is a forest. A small stream flows out of the building and down a gully.",
+        exits: {
+          E: "INSIDE_BUILDING",
+          DOWN: "SLIT_IN_ROCK",
+          S: "SLIT_IN_ROCK",
+          N: "FOREST",
+          W: "FOREST"
+        }
+      },
+      INSIDE_BUILDING: {
+        title: "Inside Brick Building",
+        sub: "The Well-House · Fresh Spring Shelter",
+        code: "WELLHOUSE",
+        desc: "You are inside a small brick building shelter for a refreshing spring. Daylight shines through a window onto a wooden supply table.",
+        exits: {
+          W: "ROAD_END"
+        }
+      },
+      FOREST: {
+        title: "Deep Woods",
+        sub: "Confusing Forest · Identical Trees",
+        code: "FOREST",
+        desc: "You are wandering around in a thick, confusing forest. The trees all look identical.",
+        exits: {
+          N: "FOREST_RANDOM",
+          S: "FOREST_RANDOM",
+          E: "FOREST_RANDOM",
+          W: "FOREST_RANDOM"
+        }
+      },
+      VALLEY: {
+        title: "Valley in the Woods",
+        sub: "The Gully · Creek Bed",
+        code: "VALLEY",
+        desc: "You are in a valley in the woods alongside the bed of the stream, which flows down from a rock slit.",
+        exits: {
+          UP: "ROAD_END",
+          N: "ROAD_END",
+          DOWN: "SLIT_IN_ROCK",
+          S: "SLIT_IN_ROCK"
+        }
+      },
+      SLIT_IN_ROCK: {
+        title: "Slit in Rock",
+        sub: "Stream Outflow · Narrow Crevice",
+        code: "ROCK SLIT",
+        desc: "At your feet, the small stream splashes into a narrow slit in the stone rock. A thick forest surrounds you.",
+        exits: {
+          UP: "VALLEY",
+          N: "VALLEY",
+          DOWN: "DEPRESSION",
+          S: "DEPRESSION"
+        }
+      },
+      DEPRESSION: {
+        title: "Outside Grate",
+        sub: "20-Foot Ravine Depression · Iron Grate",
+        code: "DEPRESSION",
+        desc: "You are in a 20-foot depression in the earth. A heavy, locked iron grate is set into the ground here.",
+        exits: {
+          UP: "SLIT_IN_ROCK",
+          DOWN: "BELOW_GRATE"
+        }
+      },
+      BELOW_GRATE: {
+        title: "Below Grate",
+        sub: "Subterranean Chamber · Sunlight Shaft",
+        code: "BELOW GRATE",
+        desc: "You are in a small subterranean chamber beneath the iron grate. Daylight shines down from above through the bars.",
+        exits: {
+          UP: "DEPRESSION",
+          W: "COBBLE_CRAWL"
+        }
+      },
+      COBBLE_CRAWL: {
+        title: "Cobble Crawl",
+        sub: "Low Claustrophobic Stone Passage",
+        code: "COBBLE CRAWL",
+        desc: "You are crawling over smooth cobbles in a low, claustrophobic stone passage. A dim light glows at the east end.",
+        exits: {
+          E: "BELOW_GRATE",
+          W: "TOP_OF_PIT",
+          DOWN: "TOP_OF_PIT"
+        }
+      },
+      TOP_OF_PIT: {
+        title: "Top of Pit",
+        sub: "Precipice Edge · Breathing Mist",
+        code: "TOP OF PIT",
+        desc: "You are at the edge of a small pit breathing traces of white mist. A tiny crack leads West. Rough stone steps descend into the mist.",
+        exits: {
+          E: "COBBLE_CRAWL",
+          DOWN: "HALL_MISTS"
+        }
+      },
+      HALL_MISTS: {
+        title: "Hall of Mists",
+        sub: "Grand Subterranean Cavern Hub",
+        code: "HALL OF MISTS",
+        desc: "You are in the magnificent Hall of Mists. A low, rolling white mist covers the floor. Passages snake out in all directions.",
+        exits: {
+          UP: "TOP_OF_PIT",
+          E: "LOW_CRAWL",
+          W: "MOUNTAIN_KING"
+        }
+      },
+      LOW_CRAWL: {
+        title: "Bird Sanctuary Grotto",
+        sub: "Green-Tinged Acoustic Chamber",
+        code: "BIRD GROTTO",
+        desc: "You are in a low, green-tinged stone chamber. A small, beautiful green bird hops around, singing a cheerful song.",
+        exits: {
+          W: "HALL_MISTS"
+        }
+      },
+      MOUNTAIN_KING: {
+        title: "Hall of the Mountain King",
+        sub: "Grand Boss Cavern · Serpent's Lair",
+        code: "MOUNTAIN KING",
+        desc: "You stand in the grand Hall of the Mountain King! Tunnels branch off in all directions.",
+        exits: {
+          E: "HALL_MISTS",
+          W: "TREASURY",
+          N: "TREASURY",
+          S: "TREASURY"
+        }
+      },
+      TREASURY: {
+        title: "The Inner Treasury",
+        sub: "Sacred Vault of Colossal Cave · Victory",
+        code: "TREASURY",
+        desc: "Spectacular heaps of ancient gold doubloons, diamond crystals, and jeweled chalices sparkle under celestial subterranean light! You have conquered the cave!",
+        exits: {
+          E: "MOUNTAIN_KING"
+        }
+      }
+    };
+
+    const initialGameState = () => ({
+      room: "ROAD_END",
+      visitedRooms: ["ROAD_END"],
+      inventory: [],
+      roomItems: {
+        ROAD_END: [],
+        INSIDE_BUILDING: ["KEYS", "LANTERN", "BOTTLE", "FOOD"],
+        FOREST: [],
+        VALLEY: [],
+        SLIT_IN_ROCK: [],
+        DEPRESSION: [],
+        BELOW_GRATE: [],
+        COBBLE_CRAWL: ["CAGE"],
+        TOP_OF_PIT: [],
+        HALL_MISTS: ["GOLD"],
+        LOW_CRAWL: ["BIRD"],
+        MOUNTAIN_KING: [],
+        TREASURY: []
+      },
+      lanternLit: false,
+      grateUnlocked: false,
+      grateOpen: false,
+      birdInCage: false,
+      snakeFrightened: false,
+      turns: 0,
+      score: 0,
+      status: "PLAYING"
+    });
+
+    const SESSION_KEY = "colossal_cave_session";
+    const loadSavedSession = () => {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.room && ROOM_DEFS[parsed.room]) {
+            return Object.assign(initialGameState(), parsed);
+          }
+        }
+      } catch(e) {}
+      return initialGameState();
+    };
+
+    let state = loadSavedSession();
+    let viewMode = 'svg';
+
+    /* ==========================================================================
+       SVG & ASCII Viewport Generators
+       ========================================================================== */
+    function getRoomSvg(roomId) {
+      if (roomId === "ROAD_END") {
+        return `
+          <svg viewBox="0 0 800 500">
+            <defs>
+              <linearGradient id="twilightSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0f172a"/><stop offset="100%" stopColor="#312e81"/></linearGradient>
+            </defs>
+            <rect width="800" height="320" fill="url(#twilightSky)"/>
+            <polygon points="0,320 220,180 400,320" fill="#1e293b" opacity="0.6"/>
+            <polygon points="300,320 540,160 760,320" fill="#0f172a" opacity="0.8"/>
+            <rect y="310" width="800" height="190" fill="#052e16"/>
+            <polygon points="120,500 280,310 360,310 240,500" fill="#475569" opacity="0.65"/>
+            <!-- Stream South -->
+            <path d="M480,360 Q520,400 480,440 Q440,480 460,500 L560,500 Q530,470 560,430 Q580,390 530,360 Z" fill="#0284c7" opacity="0.85"/>
+            <!-- Brick Wellhouse -->
+            <g transform="translate(360, 200)">
+              <rect x="0" y="40" width="180" height="100" fill="#991b1b" stroke="#450a0a" stroke-width="2"/>
+              <polygon points="-20,40 90,-20 200,40" fill="#334155"/>
+              <rect x="40" y="70" width="40" height="70" fill="#451a03"/>
+              <rect x="105" y="70" width="35" height="35" fill="#fef08a" opacity="0.9"/>
+            </g>
+          </svg>
+        `;
+      } else if (roomId === "INSIDE_BUILDING") {
+        const hasKeys = state.inventory.includes("KEYS") || !state.roomItems.INSIDE_BUILDING.includes("KEYS");
+        const hasLantern = state.inventory.includes("LANTERN") || !state.roomItems.INSIDE_BUILDING.includes("LANTERN");
+        const hasBottle = state.inventory.includes("BOTTLE") || !state.roomItems.INSIDE_BUILDING.includes("BOTTLE");
+        const hasFood = state.inventory.includes("FOOD") || !state.roomItems.INSIDE_BUILDING.includes("FOOD");
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="350" fill="#450a0a"/>
+            <rect y="350" width="800" height="150" fill="#1c1917"/>
+            <rect x="50" y="110" width="100" height="240" fill="#020617"/>
+            <text x="65" y="145" fill="#86efac" font-family="monospace" font-size="12">← ROAD</text>
+            <!-- Spring Basin -->
+            <ellipse cx="640" cy="380" rx="90" ry="35" fill="#0284c7"/>
+            <!-- Wooden Table -->
+            <g transform="translate(200, 260)">
+              <polygon points="0,50 360,50 380,75 -20,75" fill="#78350f"/>
+              <rect x="20" y="70" width="16" height="110" fill="#451a03"/>
+              <rect x="320" y="70" width="16" height="110" fill="#451a03"/>
+              ${!hasLantern ? `
+                <g transform="translate(40, -5)" onclick="takeItem('LANTERN')" style="cursor:pointer">
+                  <rect x="10" y="50" width="30" height="15" rx="2" fill="#ca8a04"/>
+                  <rect x="14" y="22" width="22" height="30" fill="#fef08a" opacity="${state.lanternLit ? '0.9' : '0.4'}"/>
+                  <path d="M12,22 Q25,8 38,22 Z" fill="#eab308"/>
+                  <text x="5" y="75" fill="#fef08a" font-family="monospace" font-size="9">LANTERN</text>
+                </g>
+              ` : ''}
+              ${!hasKeys ? `
+                <g transform="translate(130, 35)" onclick="takeItem('KEYS')" style="cursor:pointer">
+                  <circle cx="16" cy="16" r="9" stroke="#fbbf24" stroke-width="3" fill="none"/>
+                  <path d="M22,20 L42,32 L40,36 L36,33" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+                  <text x="12" y="52" fill="#fbbf24" font-family="monospace" font-size="9">KEYS</text>
+                </g>
+              ` : ''}
+              ${!hasBottle ? `
+                <g transform="translate(210, 10)" onclick="takeItem('BOTTLE')" style="cursor:pointer">
+                  <rect x="10" y="28" width="20" height="32" rx="4" fill="#0284c7"/>
+                  <rect x="16" y="10" width="8" height="6" fill="#78350f"/>
+                  <text x="5" y="70" fill="#38bdf8" font-family="monospace" font-size="9">BOTTLE</text>
+                </g>
+              ` : ''}
+              ${!hasFood ? `
+                <g transform="translate(280, 25)" onclick="takeItem('FOOD')" style="cursor:pointer">
+                  <rect x="0" y="20" width="30" height="20" rx="3" fill="#b45309" stroke="#78350f"/>
+                  <text x="5" y="52" fill="#86efac" font-family="monospace" font-size="9">FOOD</text>
+                </g>
+              ` : ''}
+            </g>
+          </svg>
+        `;
+      } else if (roomId === "FOREST") {
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#064e3b"/>
+            ${[50, 150, 250, 350, 450, 550, 650, 750].map((x, i) => `
+              <rect x="${x}" y="150" width="20" height="350" fill="#271c19"/>
+              <polygon points="${x - 30},320 ${x + 10},100 ${x + 50},320" fill="#022c22"/>
+            `).join('')}
+            <text x="400" y="470" text-anchor="middle" fill="#86efac" font-family="monospace" font-size="14">DENSE CONFUSING FOREST</text>
+          </svg>
+        `;
+      } else if (roomId === "VALLEY") {
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#022c22"/>
+            <polygon points="0,0 260,340 0,500" fill="#064e3b"/>
+            <polygon points="800,0 540,340 800,500" fill="#065f46"/>
+            <path d="M400,340 Q420,420 390,500 L450,500 Q470,420 420,340 Z" fill="#0284c7"/>
+            <text x="400" y="470" text-anchor="middle" fill="#7dd3fc" font-family="monospace" font-size="12">CREEK BED IN GULLY</text>
+          </svg>
+        `;
+      } else if (roomId === "SLIT_IN_ROCK") {
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#0f172a"/>
+            <rect y="160" width="800" height="340" fill="#1e293b"/>
+            <ellipse cx="400" cy="350" rx="40" ry="15" fill="#000"/>
+            <path d="M380,240 L380,350 L420,350 L420,240 Z" fill="#38bdf8"/>
+            <text x="400" y="420" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="14">STREAM SPLASHES INTO ROCK SLIT</text>
+          </svg>
+        `;
+      } else if (roomId === "DEPRESSION") {
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#090d16"/>
+            <polygon points="0,60 220,160 200,500 0,500" fill="#1e293b"/>
+            <polygon points="800,50 580,150 620,500 800,500" fill="#1e293b"/>
+            <!-- Iron Grate -->
+            <g transform="translate(280, 320)">
+              <polygon points="-20,20 260,20 280,140 -40,140" fill="#334155"/>
+              <polygon points="0,35 240,35 255,125 -15,125" fill="#020617"/>
+              ${!state.grateOpen ? `
+                <line x1="-10" y1="50" x2="250" y2="50" stroke="#64748b" stroke-width="6"/>
+                <line x1="-10" y1="80" x2="250" y2="80" stroke="#64748b" stroke-width="6"/>
+                <circle cx="120" cy="80" r="16" fill="#020617" stroke="#94a3b8" stroke-width="2"/>
+                <text x="120" y="85" text-anchor="middle" fill="${!state.grateUnlocked ? '#f59e0b' : '#22c55e'}" font-size="12">${!state.grateUnlocked ? '🔒' : '🔓'}</text>
+              ` : `
+                <text x="120" y="80" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="14" font-weight="bold">↓ DESCENT INTO CAVE</text>
+              `}
+            </g>
+          </svg>
+        `;
+      } else if (roomId === "BELOW_GRATE") {
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#050811"/>
+            <polygon points="340,30 460,30 560,450 240,450" fill="#fef08a" opacity="0.3"/>
+            <rect y="440" width="800" height="60" fill="#1e293b"/>
+            <text x="400" y="470" text-anchor="middle" fill="#fef08a" font-family="monospace" font-size="12">DAYLIGHT SHAFTS FROM GRATE ABOVE</text>
+          </svg>
+        `;
+      } else if (roomId === "COBBLE_CRAWL") {
+        const hasCage = !state.roomItems.COBBLE_CRAWL.includes("CAGE");
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#090d16"/>
+            <path d="M0,0 L800,0 L800,240 Q400,120 0,240 Z" fill="#1e293b"/>
+            ${!hasCage ? `
+              <g transform="translate(360, 310)" onclick="takeItem('CAGE')" style="cursor:pointer">
+                <rect x="0" y="0" width="60" height="50" rx="3" fill="#92400e" stroke="#b45309" stroke-width="2"/>
+                <text x="30" y="70" text-anchor="middle" fill="#f59e0b" font-family="monospace" font-size="10" font-weight="bold">WICKER CAGE</text>
+              </g>
+            ` : ''}
+            <text x="400" y="450" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="12">LOW COBBLE CRAWL</text>
+          </svg>
+        `;
+      } else if (roomId === "TOP_OF_PIT") {
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#020617"/>
+            <polygon points="0,180 380,210 340,500 0,500" fill="#1e293b"/>
+            <ellipse cx="580" cy="400" rx="160" ry="60" fill="#e2e8f0" opacity="0.3"/>
+            <text x="580" y="430" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="12">DOWN: STEPS INTO MIST</text>
+          </svg>
+        `;
+      } else if (roomId === "HALL_OF_MISTS") {
+        if (!state.lanternLit) {
+          return `
+            <svg viewBox="0 0 800 500">
+              <rect width="800" height="500" fill="#020617"/>
+              <circle cx="480" cy="240" r="3" fill="#ef4444"/>
+              <circle cx="505" cy="240" r="3" fill="#ef4444"/>
+              <g transform="translate(260, 200)">
+                <rect width="280" height="80" rx="8" fill="#1e1b4b" stroke="#ef4444" stroke-width="2"/>
+                <text x="140" y="35" text-anchor="middle" fill="#ef4444" font-family="monospace" font-size="16" font-weight="bold">⚠ TOTAL PITCH DARKNESS</text>
+                <text x="140" y="58" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="12">Moving without light is fatal!</text>
+              </g>
+            </svg>
+          `;
+        }
+        const hasGold = !state.roomItems.HALL_MISTS.includes("GOLD");
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#030712"/>
+            <ellipse cx="400" cy="440" rx="300" ry="50" fill="#e2e8f0" opacity="0.25"/>
+            ${!hasGold ? `
+              <g transform="translate(600, 320)" onclick="takeItem('GOLD')" style="cursor:pointer">
+                <polygon points="25,40 55,35 65,55 45,70 15,60" fill="#facc15" stroke="#fef08a" stroke-width="2"/>
+                <text x="40" y="90" text-anchor="middle" fill="#facc15" font-family="monospace" font-size="10" font-weight="bold">GOLD NUGGET</text>
+              </g>
+            ` : ''}
+            <text x="400" y="470" text-anchor="middle" fill="#fef08a" font-family="monospace" font-size="14">MAGNIFICENT HALL OF MISTS</text>
+          </svg>
+        `;
+      } else if (roomId === "LOW_CRAWL") {
+        const hasBird = !state.roomItems.LOW_CRAWL.includes("BIRD");
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#064e3b"/>
+            <ellipse cx="400" cy="400" rx="180" ry="40" fill="#0284c7" opacity="0.5"/>
+            ${!hasBird ? `
+              <g transform="translate(380, 260)" onclick="catchBirdCage()" style="cursor:pointer">
+                <circle cx="20" cy="20" r="14" fill="#10b981"/>
+                <text x="20" y="45" text-anchor="middle" fill="#6ee7b7" font-family="monospace" font-size="10" font-weight="bold">GREEN BIRD ♪</text>
+              </g>
+            ` : `
+              <text x="400" y="300" text-anchor="middle" fill="#a7f3d0" font-family="monospace" font-size="12">BIRD CAUGHT</text>
+            `}
+          </svg>
+        `;
+      } else if (roomId === "MOUNTAIN_KING") {
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#050508"/>
+            <path d="M250,450 L250,150 A150,150 0 0,1 550,150 L550,450 Z" fill="#1e1b4b"/>
+            ${!state.snakeFrightened ? `
+              <g transform="translate(350, 240)">
+                <path d="M-20,140 Q-30,40 50,60 T140,140" fill="none" stroke="#22c55e" stroke-width="30" stroke-linecap="round"/>
+                <polygon points="50,20 90,10 95,45 55,55" fill="#16a34a"/>
+                <text x="50" y="180" text-anchor="middle" fill="#ef4444" font-family="monospace" font-size="12" font-weight="bold">⚠ FIERCE GREEN VIPER</text>
+              </g>
+            ` : `
+              <text x="400" y="300" text-anchor="middle" fill="#34d399" font-family="monospace" font-size="14" font-weight="bold">✓ SERPENT FLED IN TERROR</text>
+            `}
+          </svg>
+        `;
+      } else if (roomId === "TREASURY") {
+        return `
+          <svg viewBox="0 0 800 500">
+            <rect width="800" height="500" fill="#090702"/>
+            <polygon points="100,500 400,300 700,500" fill="#facc15"/>
+            <circle cx="400" cy="180" r="45" fill="#020617" stroke="#facc15" stroke-width="3"/>
+            <text x="400" y="190" text-anchor="middle" fill="#fde047" font-size="28">🏆</text>
+            <text x="400" y="270" text-anchor="middle" fill="#fde047" font-family="monospace" font-size="16" font-weight="bold">GRANDMASTER ADVENTURER</text>
+          </svg>
+        `;
+      }
+      return '';
+    }
+
+    function getAsciiArt(roomId) {
+      return `[VINTAGE 1976 TERMINAL VIEW: ${roomId}]\nUse compass and action buttons to interact.`;
+    }
+
+    /* ==========================================================================
+       Map Coordinates & Renderer
+       ========================================================================== */
+    const MAP_NODES = [
+      { id: 'ROAD_END', label: 'Road End', depth: '0 ft', x: 45, y: 35 },
+      { id: 'INSIDE_BUILDING', label: 'Well-House', depth: '0 ft', x: 135, y: 35 },
+      { id: 'FOREST', label: 'Deep Woods', depth: '0 ft', x: 45, y: 85 },
+      { id: 'VALLEY', label: 'Valley Gully', depth: '-10 ft', x: 135, y: 85 },
+      { id: 'SLIT_IN_ROCK', label: 'Rock Slit', depth: '-15 ft', x: 225, y: 85 },
+      { id: 'DEPRESSION', label: 'Outside Grate', depth: '-20 ft', x: 225, y: 140 },
+      { id: 'BELOW_GRATE', label: 'Below Grate', depth: '-35 ft', x: 135, y: 140 },
+      { id: 'COBBLE_CRAWL', label: 'Cobble Crawl', depth: '-50 ft', x: 45, y: 140 },
+      { id: 'TOP_OF_PIT', label: 'Top of Pit', depth: '-70 ft', x: 45, y: 195 },
+      { id: 'HALL_MISTS', label: 'Hall of Mists', depth: '-100 ft', x: 135, y: 195 },
+      { id: 'LOW_CRAWL', label: 'Bird Grotto', depth: '-110 ft', x: 225, y: 195 },
+      { id: 'MOUNTAIN_KING', label: 'Mountain King', depth: '-150 ft', x: 320, y: 195 },
+      { id: 'TREASURY', label: 'Treasury Vault', depth: '-200 ft', x: 395, y: 140 }
+    ];
+
+    const MAP_CONNS = [
+      { from: 'ROAD_END', to: 'INSIDE_BUILDING', dir: 'E/W' },
+      { from: 'ROAD_END', to: 'FOREST', dir: 'N/W' },
+      { from: 'ROAD_END', to: 'SLIT_IN_ROCK', dir: 'DN/UP' },
+      { from: 'FOREST', to: 'VALLEY', dir: '25%' },
+      { from: 'VALLEY', to: 'ROAD_END', dir: 'UP' },
+      { from: 'VALLEY', to: 'SLIT_IN_ROCK', dir: 'DN' },
+      { from: 'SLIT_IN_ROCK', to: 'DEPRESSION', dir: 'DN' },
+      { from: 'DEPRESSION', to: 'BELOW_GRATE', dir: 'DN', checkBlocked: (s) => !s.grateUnlocked || !s.grateOpen },
+      { from: 'BELOW_GRATE', to: 'COBBLE_CRAWL', dir: 'W' },
+      { from: 'COBBLE_CRAWL', to: 'TOP_OF_PIT', dir: 'W' },
+      { from: 'TOP_OF_PIT', to: 'HALL_MISTS', dir: 'DN' },
+      { from: 'HALL_MISTS', to: 'LOW_CRAWL', dir: 'E' },
+      { from: 'HALL_MISTS', to: 'MOUNTAIN_KING', dir: 'W' },
+      { from: 'MOUNTAIN_KING', to: 'TREASURY', dir: 'W', checkBlocked: (s) => !s.snakeFrightened }
+    ];
+
+    function renderCaveMap() {
+      const svg = document.getElementById("cave-map-svg");
+      if (!svg) return;
+      document.getElementById("map-survey-count").textContent = `SURVEYED: ${state.visitedRooms.length} / 13`;
+
+      let html = `
+        <pattern id="gridPat" width="30" height="30" patternUnits="userSpaceOnUse">
+          <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#1e293b" stroke-width="0.5" stroke-opacity="0.3"/>
+        </pattern>
+        <rect width="440" height="240" fill="url(#gridPat)"/>
+      `;
+
+      MAP_CONNS.forEach(conn => {
+        const from = MAP_NODES.find(n => n.id === conn.from);
+        const to = MAP_NODES.find(n => n.id === conn.to);
+        if (!from || !to) return;
+        const isKnown = state.visitedRooms.includes(conn.from) && state.visitedRooms.includes(conn.to);
+        const isBlocked = conn.checkBlocked ? conn.checkBlocked(state) : false;
+
+        let stroke = isKnown ? (isBlocked ? '#f43f5e' : '#10b981') : '#1e293b';
+        let dash = isKnown ? (isBlocked ? '4 2' : 'none') : '3 3';
+        let width = isKnown ? '2' : '1.5';
+
+        html += `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${stroke}" stroke-width="${width}" stroke-dasharray="${dash}"/>`;
+      });
+
+      MAP_NODES.forEach(node => {
+        const isCurrent = state.room === node.id;
+        const isVisited = state.visitedRooms.includes(node.id);
+
+        if (isCurrent) {
+          html += `
+            <circle cx="${node.x}" cy="${node.y}" r="16" fill="#38bdf8" opacity="0.3"/>
+            <circle cx="${node.x}" cy="${node.y}" r="10" fill="none" stroke="#38bdf8" stroke-width="1.5"/>
+          `;
+        }
+
+        const stroke = isCurrent ? '#38bdf8' : isVisited ? '#10b981' : '#334155';
+        const fill = isCurrent ? '#0284c7' : isVisited ? '#064e3b' : '#090d16';
+        const core = isCurrent ? '#fff' : isVisited ? '#34d399' : '#1e293b';
+
+        html += `
+          <g onclick="inspectMapNode('${node.id}')" style="cursor: pointer;">
+            <circle cx="${node.x}" cy="${node.y}" r="${isCurrent ? '8' : '6'}" fill="${fill}" stroke="${stroke}" stroke-width="${isCurrent ? '2' : '1.5'}"/>
+            <circle cx="${node.x}" cy="${node.y}" r="${isCurrent ? '4' : '3'}" fill="${core}"/>
+            <text x="${node.x}" y="${node.y + 14}" text-anchor="middle" fill="${isCurrent ? '#38bdf8' : isVisited ? '#cbd5e1' : '#64748b'}" font-size="6" font-family="monospace">
+              ${isVisited || isCurrent ? node.label : '[ ? ]'}
+            </text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = html;
+    }
+
+    function inspectMapNode(roomId) {
+      const node = MAP_NODES.find(n => n.id === roomId);
+      const recon = document.getElementById("map-node-recon");
+      if (!node || !recon) return;
+
+      const isVisited = state.visitedRooms.includes(roomId);
+      const roomDef = ROOM_DEFS[roomId];
+
+      recon.style.display = "block";
+      recon.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <b style="color: var(--neon-cyan);">${node.label} (${node.depth})</b>
+          <span style="cursor: pointer; color: #94a3b8;" onclick="document.getElementById('map-node-recon').style.display='none'">✕</span>
+        </div>
+        <div style="color: #e2e8f0; margin-top: 0.2rem;">
+          ${isVisited ? roomDef.desc : 'Unexplored chamber.'}
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       UI Renderer & Controls
+       ========================================================================== */
+    let lastRenderedRoom = null;
+
+    function updateUI() {
+      const curRoom = ROOM_DEFS[state.room];
+      const isNewRoom = lastRenderedRoom !== state.room;
+      lastRenderedRoom = state.room;
+
+      // Location Headers with Cross-Fade
+      const locCard = document.querySelector(".location-card");
+      if (locCard && isNewRoom) {
+        locCard.classList.remove("header-fade-in");
+        void locCard.offsetWidth; // Trigger reflow
+        locCard.classList.add("header-fade-in");
+      }
+
+      document.getElementById("loc-title").textContent = curRoom.title;
+      document.getElementById("loc-sub").textContent = curRoom.sub;
+      document.getElementById("loc-code").textContent = curRoom.code;
+
+      // Stats
+      document.getElementById("stat-turns").textContent = state.turns;
+      document.getElementById("stat-score").textContent = `${state.score} / 160`;
+
+      // Viewports with Cross-Fade
+      const svgLayer = document.getElementById("svg-layer");
+      const asciiLayer = document.getElementById("ascii-layer");
+
+      if (viewMode === 'svg') {
+        svgLayer.innerHTML = getRoomSvg(state.room);
+        svgLayer.style.display = "block";
+        asciiLayer.style.display = "none";
+        if (isNewRoom) {
+          svgLayer.classList.remove("room-fade-in");
+          void svgLayer.offsetWidth; // Trigger reflow
+          svgLayer.classList.add("room-fade-in");
+        }
+      } else {
+        asciiLayer.textContent = getAsciiArt(state.room);
+        asciiLayer.style.display = "block";
+        svgLayer.style.display = "none";
+        if (isNewRoom) {
+          asciiLayer.classList.remove("room-fade-in");
+          void asciiLayer.offsetWidth; // Trigger reflow
+          asciiLayer.classList.add("room-fade-in");
+        }
+      }
+
+      // Compass Controls
+      const directions = ["N", "S", "E", "W", "UP", "DOWN"];
+      let activeExits = 0;
+      directions.forEach(dir => {
+        const btn = document.getElementById(`btn-dir-${dir.toLowerCase()}`);
+        if (btn) {
+          const hasExit = curRoom.exits[dir] !== undefined;
+          btn.disabled = !hasExit;
+          if (hasExit) activeExits++;
+        }
+      });
+      document.getElementById("exits-count").textContent = `${activeExits} EXITS`;
+
+      // Inventory
+      const invContainer = document.getElementById("inv-container");
+      document.getElementById("inv-count").textContent = `${state.inventory.length} ITEMS`;
+
+      if (state.inventory.length === 0) {
+        invContainer.innerHTML = '<div class="inv-empty">Locker is empty.<br>Pick up supplies.</div>';
+      } else {
+        invContainer.innerHTML = state.inventory.map(item => `
+          <div class="inv-item-card">
+            <div class="inv-item-name">${item}</div>
+            <div class="inv-item-status">${item === 'LANTERN' ? (state.lanternLit ? 'LIT' : 'UNLIT') : 'HELD'}</div>
+          </div>
+        `).join('');
+      }
+
+      renderActionButtons();
+      renderCaveMap();
+    }
+
+    function renderActionButtons() {
+      const container = document.getElementById("action-btns-container");
+      container.innerHTML = "";
+
+      const currentItems = state.roomItems[state.room] || [];
+
+      // Take item buttons
+      currentItems.forEach(item => {
+        container.appendChild(createBtn(`Take ${item}`, () => takeItem(item)));
+      });
+
+      // Special contextual interactions
+      if (state.room === "INSIDE_BUILDING") {
+        container.appendChild(createBtn("Cast XYZZY Magic", castXyzzy, "btn-urgent"));
+      }
+
+      if (state.room === "DEPRESSION") {
+        if (!state.grateUnlocked) {
+          if (state.inventory.includes("KEYS")) {
+            container.appendChild(createBtn("Unlock Grate with Keys", unlockGrate, "btn-urgent"));
+          }
+        } else if (!state.grateOpen) {
+          container.appendChild(createBtn("Open Heavy Grate", openGrate, "btn-urgent"));
+        }
+      }
+
+      if (state.inventory.includes("LANTERN")) {
+        container.appendChild(createBtn(state.lanternLit ? "Extinguish Lantern" : "Light Brass Lantern", toggleLantern));
+      }
+
+      if (state.inventory.includes("FOOD")) {
+        container.appendChild(createBtn("Eat Food Rations", eatFood));
+      }
+
+      if (state.room === "LOW_CRAWL" && currentItems.includes("BIRD")) {
+        container.appendChild(createBtn("Catch Bird (Bare Hands)", catchBirdHands));
+        if (state.inventory.includes("CAGE")) {
+          container.appendChild(createBtn("Catch Bird with Wicker Cage", catchBirdCage, "btn-urgent"));
+        }
+      }
+
+      if (state.room === "MOUNTAIN_KING" && !state.snakeFrightened) {
+        if (state.inventory.includes("BIRD") || state.birdInCage) {
+          container.appendChild(createBtn("Release Bird to Scare Snake", scareSnake, "btn-urgent"));
+        }
+      }
+
+      if (state.room === "HALL_MISTS") {
+        container.appendChild(createBtn("Cast XYZZY Magic", castXyzzy, "btn-urgent"));
+      }
+
+      // Persist game state
+      saveSession();
+    }
+
+    function createBtn(text, onClick, extraClass = "") {
+      const b = document.createElement("button");
+      b.className = `action-btn ${extraClass}`;
+      b.textContent = text;
+      b.onclick = onClick;
+      return b;
+    }
+
+    /* ==========================================================================
+       Game Mechanics
+       ========================================================================== */
+    function moveDirection(dir) {
+      const room = ROOM_DEFS[state.room];
+      let targetRoom = room.exits[dir];
+      if (!targetRoom) {
+        logMessage(`You cannot move ${dir} from here.`, "warning");
+        return;
+      }
+
+      // Forest random mechanic
+      if (targetRoom === "FOREST_RANDOM") {
+        const roll = Math.random();
+        if (roll < 0.5) targetRoom = "FOREST";
+        else if (roll < 0.75) targetRoom = "ROAD_END";
+        else targetRoom = "VALLEY";
+      }
+
+      // Grate check
+      if (state.room === "DEPRESSION" && dir === "DOWN") {
+        if (!state.grateUnlocked) {
+          logMessage("The iron grate is locked tight with a heavy padlock!", "warning");
+          return;
+        }
+        if (!state.grateOpen) {
+          logMessage("The grate is unlocked, but its heavy lid is shut.", "warning");
+          return;
+        }
+      }
+
+      // Snake strike
+      if (state.room === "MOUNTAIN_KING" && (dir === "W" || dir === "N" || dir === "S")) {
+        if (!state.snakeFrightened && targetRoom === "TREASURY") {
+          sound.playSnake();
+          sound.playDeath();
+          triggerGameOver("The ferocious green viper strikes like lightning! Its deadly venom kills you instantly.");
+          return;
+        }
+      }
+
+      // Darkness death in Hall of Mists
+      if (targetRoom === "HALL_MISTS" && !state.lanternLit) {
+        sound.playStep();
+        sound.playDeath();
+        triggerGameOver("You fell into a pit in the dark and broke your neck!");
+        return;
+      }
+
+      // Move success
+      sound.playStep();
+      state.room = targetRoom;
+      state.turns++;
+      if (!state.visitedRooms.includes(targetRoom)) {
+        state.visitedRooms.push(targetRoom);
+        state.score += 5;
+      }
+      logMessage(`You travel ${dir} into ${ROOM_DEFS[targetRoom].title}.`, "action");
+      logMessage(ROOM_DEFS[targetRoom].desc, "narration");
+
+      if (targetRoom === "TREASURY" && state.status === "PLAYING") {
+        state.status = "VICTORY";
+        state.score += 100;
+        sound.playVictory();
+        triggerVictory();
+      }
+
+      updateUI();
+    }
+
+    function takeItem(item) {
+      const idx = state.roomItems[state.room].indexOf(item);
+      if (idx > -1) {
+        state.roomItems[state.room].splice(idx, 1);
+        state.inventory.push(item);
+        state.score += 10;
+        sound.playUnlock();
+        logMessage(`You picked up the ${item}. (+10 pts)`, "action");
+        updateUI();
+      }
+    }
+
+    function unlockGrate() {
+      state.grateUnlocked = true;
+      state.score += 15;
+      sound.playUnlock();
+      logMessage("You fit the brass key into the padlock and turn it. CLACK! The grate is unlocked! (+15 pts)", "success");
+      updateUI();
+    }
+
+    function openGrate() {
+      state.grateOpen = true;
+      sound.playStep();
+      logMessage("With a heave, you pull the heavy wrought-iron grate open! Stone steps descend straight down into subterranean darkness.", "action");
+      updateUI();
+    }
+
+    function toggleLantern() {
+      state.lanternLit = !state.lanternLit;
+      sound.playLight();
+      logMessage(state.lanternLit ? "You strike a match and light the brass lantern. A warm golden aura floods your surroundings!" : "You extinguish the brass lantern.", "action");
+      updateUI();
+    }
+
+    function eatFood() {
+      const idx = state.inventory.indexOf("FOOD");
+      if (idx > -1) {
+        state.inventory.splice(idx, 1);
+        state.score += 5;
+        sound.playUnlock();
+        logMessage("You eat the delicious traveler's rations. Nutritious and invigorating! (+5 pts)", "success");
+        updateUI();
+      }
+    }
+
+    function castXyzzy() {
+      sound.playMagic();
+      if (state.room === "INSIDE_BUILDING") {
+        state.room = "HALL_MISTS";
+        if (!state.visitedRooms.includes("HALL_MISTS")) state.visitedRooms.push("HALL_MISTS");
+        if (!state.lanternLit) {
+          sound.playDeath();
+          triggerGameOver("You teleported into the pitch-black Hall of Mists and fell into a pit in the dark and broke your neck!");
+          return;
+        }
+        logMessage('A hollow voice echoes "XYZZY!" Everything spins in a sparkling vortex... You materialize in the Hall of Mists!', "lore");
+      } else if (state.room === "HALL_MISTS") {
+        state.room = "INSIDE_BUILDING";
+        logMessage('A hollow voice echoes "XYZZY!" The mist dissolves... You reappear inside the well-house!', "lore");
+      } else {
+        logMessage("Nothing happens.", "narration");
+      }
+      updateUI();
+    }
+
+    function catchBirdHands() {
+      sound.playBird();
+      logMessage("You reach out with bare hands, but the little green bird flutters gracefully up to a high limestone drapery, chirping mockingly!", "warning");
+    }
+
+    function catchBirdCage() {
+      const idx = state.roomItems.LOW_CRAWL.indexOf("BIRD");
+      if (idx > -1 && state.inventory.includes("CAGE")) {
+        state.roomItems.LOW_CRAWL.splice(idx, 1);
+        state.birdInCage = true;
+        state.inventory.push("BIRD");
+        state.score += 25;
+        sound.playBird();
+        logMessage("You gently lower the wicker cage. The curious little green bird hops inside! You slip the latch closed. (+25 pts)", "success");
+        updateUI();
+      }
+    }
+
+    function scareSnake() {
+      state.snakeFrightened = true;
+      state.score += 40;
+      sound.playBird();
+      sound.playSnake();
+      logMessage("You uncover the bird. Hearing its piercing battle trill, the green snake recoils in primal terror and slithers into a crevice! The passages are clear! (+40 pts)", "success");
+      updateUI();
+    }
+
+    function logMessage(text, type = "narration") {
+      const out = document.getElementById("terminal-output");
+      const line = document.createElement("div");
+      line.className = `log-line log-${type}`;
+      line.innerHTML = `<span class="log-turn">[T${state.turns.toString().padStart(2, '0')}]</span> ${text}`;
+      out.appendChild(line);
+      out.scrollTop = out.scrollHeight;
+    }
+
+    function triggerGameOver(reason) {
+      state.status = "GAME_OVER";
+      const modal = document.getElementById("game-modal");
+      document.getElementById("modal-title").textContent = "YOU HAVE PERISHED";
+      document.getElementById("modal-title").style.color = "var(--danger-red)";
+      document.getElementById("modal-desc").textContent = reason;
+      modal.style.display = "flex";
+    }
+
+    function triggerVictory() {
+      const modal = document.getElementById("game-modal");
+      document.getElementById("modal-title").textContent = "★ GRANDMASTER ADVENTURER ★";
+      document.getElementById("modal-title").style.color = "var(--gold-yellow)";
+      document.getElementById("modal-desc").textContent = `Spectacular heaps of ancient gold doubloons and diamonds sparkle! You conquered Colossal Cave with a score of ${state.score}!`;
+      modal.style.display = "flex";
+    }
+
+    /* ==========================================================================
+       Event Listeners
+       ========================================================================== */
+    document.querySelectorAll(".compass-btn").forEach(btn => {
+      btn.onclick = () => moveDirection(btn.dataset.dir);
+    });
+
+    document.getElementById("terminal-form").onsubmit = (e) => {
+      e.preventDefault();
+      const input = document.getElementById("terminal-input");
+      const cmd = input.value.trim().toUpperCase();
+      if (!cmd) return;
+      input.value = "";
+
+      logMessage(`> ${cmd}`, "action");
+
+      if (cmd === 'N' || cmd === 'NORTH') moveDirection('N');
+      else if (cmd === 'S' || cmd === 'SOUTH') moveDirection('S');
+      else if (cmd === 'E' || cmd === 'EAST') moveDirection('E');
+      else if (cmd === 'W' || cmd === 'WEST') moveDirection('W');
+      else if (cmd === 'U' || cmd === 'UP') moveDirection('UP');
+      else if (cmd === 'D' || cmd === 'DOWN') moveDirection('DOWN');
+      else if (cmd === 'LOOK' || cmd === 'L') logMessage(ROOM_DEFS[state.room].desc, "narration");
+      else if (cmd === 'LIGHT' || cmd === 'LIGHT LANTERN') toggleLantern();
+      else if (cmd === 'UNLOCK' || cmd === 'UNLOCK GRATE') unlockGrate();
+      else if (cmd === 'OPEN' || cmd === 'OPEN GRATE') openGrate();
+      else if (cmd === 'XYZZY') castXyzzy();
+      else if (cmd === 'EAT' || cmd === 'EAT FOOD') eatFood();
+      else if (cmd === 'CATCH BIRD' || cmd === 'GET BIRD') {
+        if (state.inventory.includes('CAGE')) catchBirdCage();
+        else catchBirdHands();
+      } else if (cmd.includes('SNAKE') || cmd.includes('SCARE')) scareSnake();
+      else if (cmd === 'HELP') logMessage("COMMANDS: N, S, E, W, UP, DOWN, LOOK, XYZZY, GET <item>, EAT, LIGHT LANTERN, UNLOCK GRATE, CATCH BIRD, SCARE SNAKE.", "lore");
+      else logMessage(`I do not understand "${cmd}". Type HELP or click buttons!`, "warning");
+    };
+
+    document.getElementById("modal-action-btn").onclick = () => {
+      document.getElementById("game-modal").style.display = "none";
+      state = initialGameState();
+      updateUI();
+    };
+
+    const resetAdventure = () => {
+      try {
+        localStorage.removeItem(SESSION_KEY);
+      } catch(e) {}
+      state = initialGameState();
+      document.getElementById("terminal-output").innerHTML = "";
+      logMessage("Adventure session reset. A new expedition begins!", "lore");
+      logMessage(ROOM_DEFS[state.room].desc, "narration");
+      updateUI();
+    };
+
+    const resetBtn = document.getElementById("btn-reset-session");
+    if (resetBtn) resetBtn.onclick = resetAdventure;
+    document.getElementById("btn-reset-game").onclick = resetAdventure;
+
+    document.getElementById("btn-toggle-scanlines").onclick = () => {
+      document.body.classList.toggle("scanlines");
+    };
+
+    document.getElementById("btn-toggle-view").onclick = () => {
+      viewMode = viewMode === 'svg' ? 'ascii' : 'svg';
+      document.getElementById("btn-toggle-view").textContent = `VIEW: ${viewMode.toUpperCase()}`;
+      updateUI();
+    };
+
+    const updateSoundBtn = () => {
+      const btn = document.getElementById("btn-toggle-sound");
+      if (btn) {
+        btn.textContent = `AMBIENT: ${sound.enabled ? 'ON' : 'MUTED'}`;
+        btn.style.color = sound.enabled ? 'var(--neon-green)' : '#94a3b8';
+        btn.style.borderColor = sound.enabled ? 'var(--neon-green)' : 'var(--border-color)';
+      }
+    };
+    updateSoundBtn();
+
+    document.getElementById("btn-toggle-sound").onclick = () => {
+      sound.setEnabled(!sound.enabled);
+      updateSoundBtn();
+      logMessage(sound.enabled ? "Subterranean ambient noise enabled (wind & stone rumble loop)." : "Subterranean ambient noise muted.", "action");
+    };
+
+    // Initial Start
+    logMessage("COLOSSAL CAVE ADVENTURE · GRAPHICAL REMAKE (1976/77)", "lore");
+    logMessage(ROOM_DEFS[state.room].desc, "narration");
+    updateUI();
+  </script>
+</body>
+</html>

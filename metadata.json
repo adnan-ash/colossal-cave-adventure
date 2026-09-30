@@ -1,0 +1,6 @@
+{
+  "name": "Colossal Cave Adventure - Graphical Remake",
+  "description": "A sleek modern-retro graphical remake of the legendary Colossal Cave Adventure with dynamic vector viewports, compass controls, and interactive inventory.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
