@@ -173,5 +173,5 @@ Dedicated with utmost admiration to **Will Crowther** and **Don Woods**, whose 1
 Distributed under the [MIT License](LICENSE). Feel free to fork, expand, explore, and share!
 
 <div align="center">
-<sub>Crafted with passion, nostalgia, Google AI Studio, and Google Antigravity. May your lantern never extinguish. 🕯️</sub>
+<sub>Crafted with passion, nostalgia May your lantern never extinguish. 🕯️</sub>
 </div>
