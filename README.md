@@ -31,7 +31,7 @@
                / 　 づ
 ```
 
-**[🎮 PLAY THE EXPEDITION LIVE](https://colossal-cave-adventure.pages.dev)** • **[📜 RETRO TERMINAL EDITION](https://colossal-cave-adventure.pages.dev/colossal_cave)** • **[✨ REPORT ISSUE](https://github.com)**
+**[🎮 PLAY THE EXPEDITION LIVE](https://colossal-cave-adventure.pages.dev)** • **[📜 RETRO TERMINAL EDITION](https://colossal-cave-adventure.pages.dev/colossal_cave)** • **[✨ REPORT ISSUE](https://github.com/adnan-ash/colossal-cave-adventure/issues)**
 
 ---
 
@@ -92,7 +92,7 @@ This project was built from the ground up through human-AI synergy, blending cut
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/colossal-cave-adventure.git
+git clone https://github.com/adnan-ash/colossal-cave-adventure.git
 cd colossal-cave-adventure
 ```
 
